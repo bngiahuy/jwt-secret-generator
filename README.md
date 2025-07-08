@@ -1,0 +1,1 @@
+This web application is a lightweight, client-side tool built with vanilla JavaScript, HTML, and Tailwind CSS. It provides a simple interface to generate secure, random secret keys for JWT token signing, allowing users to specify key lengths from 32 to 512 bits. Ideal for developers needing quick and secure key generation.
