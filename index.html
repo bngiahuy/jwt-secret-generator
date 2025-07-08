@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Secret Key Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for better aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">JWT Secret Key Generator</h1>
+
+        <div class="mb-6">
+            <label for="secretLength" class="block text-gray-700 text-sm font-semibold mb-2">
+                Secret Length (bits):
+            </label>
+            <input
+                type="number"
+                id="secretLength"
+                min="32"
+                max="512"
+                step="8"
+                value="256"
+                class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition duration-200 ease-in-out"
+                aria-label="Secret Key Length in bits"
+            >
+            <p class="text-xs text-gray-500 mt-1">
+                Enter a value between 32 and 512, in multiples of 8.
+            </p>
+        </div>
+
+        <button
+            id="generateBtn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 ease-in-out transform hover:scale-105 shadow-md"
+            aria-label="Generate Secret Key"
+        >
+            Generate Secret Key
+        </button>
+
+        <div class="mt-8">
+            <label for="generatedKey" class="block text-gray-700 text-sm font-semibold mb-2">
+                Generated Key:
+            </label>
+            <textarea
+                id="generatedKey"
+                rows="4"
+                readonly
+                class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 bg-gray-50 leading-tight focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent resize-y"
+                placeholder="Your secure JWT secret key will appear here..."
+                aria-label="Generated Secret Key"
+            ></textarea>
+        </div>
+
+        <button
+            id="copyBtn"
+            class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-200 ease-in-out transform hover:scale-105 shadow-md"
+            aria-label="Copy Generated Key to Clipboard"
+        >
+            Copy Key
+        </button>
+
+        <p id="message" class="text-center text-sm text-gray-600 mt-4 h-5"></p>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const secretLengthInput = document.getElementById('secretLength');
+        const generateBtn = document.getElementById('generateBtn');
+        const generatedKeyTextarea = document.getElementById('generatedKey');
+        const copyBtn = document.getElementById('copyBtn');
+        const messageDisplay = document.getElementById('message');
+
+        /**
+         * Generates a secure random key of a specified length in bits.
+         * Uses the Web Crypto API for strong randomness.
+         * @param {number} bitLength - The desired length of the key in bits (must be a multiple of 8).
+         * @returns {string} The generated key as a hexadecimal string.
+         */
+        function generateSecureKey(bitLength) {
+            // Validate bitLength to ensure it's a positive multiple of 8
+            if (bitLength <= 0 || bitLength % 8 !== 0) {
+                console.error("Invalid bit length. Must be a positive multiple of 8.");
+                return '';
+            }
+
+            // Calculate the number of bytes needed
+            const byteLength = bitLength / 8;
+
+            // Create a Uint8Array to hold the random bytes
+            const randomBytes = new Uint8Array(byteLength);
+
+            // Use the Web Crypto API to fill the array with secure random values
+            // crypto.getRandomValues is synchronous and suitable for this purpose.
+            window.crypto.getRandomValues(randomBytes);
+
+            // Convert the Uint8Array to a hexadecimal string
+            let hexKey = '';
+            for (let i = 0; i < randomBytes.length; i++) {
+                // Convert each byte to its hexadecimal representation
+                // .toString(16) converts to hex
+                // .padStart(2, '0') ensures two characters (e.g., 'a' becomes '0a')
+                hexKey += randomBytes[i].toString(16).padStart(2, '0');
+            }
+
+            return hexKey;
+        }
+
+        /**
+         * Displays a temporary message to the user.
+         * @param {string} msg - The message to display.
+         * @param {string} type - 'success' or 'error' for styling.
+         */
+        function showMessage(msg, type = 'info') {
+            messageDisplay.textContent = msg;
+            messageDisplay.className = 'text-center text-sm mt-4 h-5'; // Reset classes
+            if (type === 'success') {
+                messageDisplay.classList.add('text-green-700');
+            } else if (type === 'error') {
+                messageDisplay.classList.add('text-red-700');
+            } else {
+                messageDisplay.classList.add('text-gray-600');
+            }
+
+            // Clear the message after a few seconds
+            setTimeout(() => {
+                messageDisplay.textContent = '';
+                messageDisplay.className = 'text-center text-sm text-gray-600 mt-4 h-5'; // Reset to default
+            }, 3000);
+        }
+
+        // Event listener for the Generate button
+        generateBtn.addEventListener('click', () => {
+            const desiredLength = parseInt(secretLengthInput.value, 10);
+
+            // Input validation
+            if (isNaN(desiredLength) || desiredLength < 32 || desiredLength > 512 || desiredLength % 8 !== 0) {
+                showMessage('Please enter a valid length between 32 and 512, in multiples of 8.', 'error');
+                generatedKeyTextarea.value = ''; // Clear previous key
+                return;
+            }
+
+            try {
+                const key = generateSecureKey(desiredLength);
+                generatedKeyTextarea.value = key;
+                showMessage('Key generated successfully!', 'success');
+            } catch (error) {
+                console.error('Error generating key:', error);
+                showMessage('Failed to generate key. Please check console for details.', 'error');
+                generatedKeyTextarea.value = '';
+            }
+        });
+
+        // Event listener for the Copy button
+        copyBtn.addEventListener('click', () => {
+            if (generatedKeyTextarea.value) {
+                // Select the text in the textarea
+                generatedKeyTextarea.select();
+                generatedKeyTextarea.setSelectionRange(0, 99999); // For mobile devices
+
+                try {
+                    // Copy the text to the clipboard
+                    // document.execCommand('copy') is used for broader compatibility in iframes
+                    document.execCommand('copy');
+                    showMessage('Key copied to clipboard!', 'success');
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    showMessage('Failed to copy key. Please copy manually.', 'error');
+                }
+            } else {
+                showMessage('No key to copy. Generate one first!', 'info');
+            }
+        });
+
+        // Generate a key on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+             // Trigger a click on the generate button to show an initial key
+            generateBtn.click();
+        });
+
+    </script>
+</body>
+</html>
